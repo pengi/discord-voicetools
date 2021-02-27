@@ -22,9 +22,18 @@ class VoiceTools(discord.Client):
         next_voice_role = None
         if after.channel:
             next_voice_role = "voice " + after.channel.name
-        
+
+        print(next_voice_role)
+
+        # Workaround, refetch since discord.js seems to have problem with role caches
+        fetched_member = await member.guild.fetch_member(member.id)
+        # print("fetched", fetched_member)
+        if not fetched_member:
+            return
+
         # Remove all voice roles per default
-        for role in member.roles:
+        for role in fetched_member.roles:
+            # print("role", role)
             if role.name.startswith("voice "):
                 if role.name != next_voice_role:
                     roles_remove.append(role)
@@ -33,9 +42,11 @@ class VoiceTools(discord.Client):
             for role in member.guild.roles:
                 if role.name == next_voice_role:
                     roles_add.append(role)
-            
-        await member.remove_roles(*roles_remove)
-        await member.add_roles(*roles_add)
+        
+        if len(roles_add) > 0:
+            await fetched_member.add_roles(*roles_add, atomic=True)
+        if len(roles_remove) > 0:
+            await fetched_member.remove_roles(*roles_remove, atomic=True)
 
 if __name__ == '__main__':
     import os
