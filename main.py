@@ -1,13 +1,14 @@
 import discord
 
-
-class VoiceToolGuild:
+class BehaviorVoiceRole:
     """
-    Storage for cached guild data
+    Behavior voice roles
 
-    Note: This information won't be discarded if a guild is removed until next restart
+    Add a role to a member when being joined to a voice channel. The role given
+    is has the same name as the voice channel, prefixed with "voice ".
+    
+    If the role doesn't exist, the channel is ignored
     """
-
     def __init__(self, guild):
         self.guild = guild
 
@@ -34,10 +35,33 @@ class VoiceToolGuild:
             print(self.guild, "voice join", role, member)
             await member.add_roles(role, atomic=True)
 
+class VoiceToolGuild:
+    """
+    Add behaviors to a guild
+
+    Models the behavior of the voice part of the guild, and coordinates
+    behavior objects
+    """
+    def __init__(self, guild):
+        self.guild = guild
+        self.behaviors = [
+            BehaviorVoiceRole(guild)
+        ]
+    
+    async def voice_leave(self, member, channel):
+        for behavior in self.behaviors:
+            if behavior.voice_leave:
+                await behavior.voice_leave(member, channel)
+    
+    async def voice_join(self, member, channel):
+        for behavior in self.behaviors:
+            if behavior.voice_join:
+                await behavior.voice_join(member, channel)
+
 
 class VoiceTools(discord.Client):
-    # def __init__(self):
-    #     super(discord.Client, self).__init__()
+    def __init__(self):
+        super(VoiceTools, self).__init__()
 
     def _wrap_guild(self, guild):
         # Small scale for now, so don't cache...
