@@ -1,4 +1,7 @@
 import discord
+import re
+from datetime import datetime
+
 
 class BehaviorVoiceRole:
     """
@@ -6,9 +9,10 @@ class BehaviorVoiceRole:
 
     Add a role to a member when being joined to a voice channel. The role given
     is has the same name as the voice channel, prefixed with "voice ".
-    
+
     If the role doesn't exist, the channel is ignored
     """
+
     def __init__(self, guild):
         self.guild = guild
 
@@ -35,6 +39,65 @@ class BehaviorVoiceRole:
             print(self.guild, "voice join", role, member)
             await member.add_roles(role, atomic=True)
 
+
+class BehaviorStatsChannel:
+    """
+    Beavior stats channel
+
+    For a waiting room voice channel, it is helpful to get stats out for how
+    long people has been waiting.
+
+    Add a text channel with the same name as the voice channel, in the format
+    as all alphanumeric letters is in lowercase, all other letters is ignored,
+    all spaces is converted to only one, prefixed with "stats-"
+
+    Such as a channel named "⌚ waiting room" will be called #stats-waiting-room
+    """
+    HISTORY_LENGTH = 200
+
+    def __init__(self, guild):
+        self.guild = guild
+
+    def _get_channel_by_name(self, name):
+        for channel in self.guild.channels:
+            if channel.name == name:
+                return channel
+        return None
+
+    def _stats_channel(self, voice_channel):
+        voice_name = voice_channel.name
+        filtered = re.sub(r'[^a-zA-Z0-9 ]+', '', voice_name)
+        stats_channel = 'stats-' + \
+            re.sub(r'[ ]+', '-', filtered.strip().lower())
+        return self._get_channel_by_name(stats_channel)
+
+    async def voice_leave(self, member, channel):
+        stchn = self._stats_channel(channel)
+        if stchn is None:
+            # If no stats channel is available, ignore
+            return
+
+        now = datetime.now().strftime("%H:%M:%S")
+
+        async for msg in stchn.history(limit=self.HISTORY_LENGTH):
+            if msg.content.startswith("join ") and member.mentioned_in(msg):
+                await msg.edit(content="leave " + now + " " + msg.content)
+
+    async def voice_join(self, member, channel):
+        stchn = self._stats_channel(channel)
+        if stchn is None:
+            # If no stats channel is available, ignore
+            return
+
+        now = datetime.now().strftime("%H:%M:%S")
+
+        # Don't mention directly, but edit message to the mention. This ensures
+        # the user won't get an annoying notificatoin, since only sending a
+        # message will trigger the notification
+        msg = await stchn.send("(temp)")
+        await msg.edit(content="join " + now + "  " + member.mention)
+
+
 class VoiceToolGuild:
     """
     Add behaviors to a guild
@@ -42,17 +105,19 @@ class VoiceToolGuild:
     Models the behavior of the voice part of the guild, and coordinates
     behavior objects
     """
+
     def __init__(self, guild):
         self.guild = guild
         self.behaviors = [
-            BehaviorVoiceRole(guild)
+            BehaviorVoiceRole(guild),
+            BehaviorStatsChannel(guild)
         ]
-    
+
     async def voice_leave(self, member, channel):
         for behavior in self.behaviors:
             if behavior.voice_leave:
                 await behavior.voice_leave(member, channel)
-    
+
     async def voice_join(self, member, channel):
         for behavior in self.behaviors:
             if behavior.voice_join:
