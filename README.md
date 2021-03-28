@@ -3,7 +3,16 @@ VoiceTools
 
 Discord bot to simplify voice tools
 
-This is currently not intended for public use, but for private servers, which means UI and configuration may change or be added without further notice.
+The bot is intended to be stateless and without configuration, which means all roles are updated and resolved at runtime.
+
+Configuration and behavior only depends on naming of roles and channels to connect the behavior together
+
+Scalability
+-----------
+
+It is built for smaller servers with just a few active voice channels, so no caching is implemented. That being said, it should probably handle a few bigger too.
+
+To scale it up, more advanced caching of roles and stats channel is needed, which is out of scope for this project, to keep the project simple.
 
 Role for voice channel
 ----------------------
