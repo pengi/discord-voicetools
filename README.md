@@ -34,6 +34,8 @@ Since text channels have much stricter names, only alfanumeric characters and an
 
 A channel with name "⏲ Waiting Room ⏲" will then have the stats channel name #stats-waiting-room
 
+Timezone can be configured for the channel setting the topic in the stats channel to include "tz:timezone", for example "tz:CET". The timezone should be a name recognizable by pytz library, and defaults to UTC
+
 Start the bot
 -------------
 

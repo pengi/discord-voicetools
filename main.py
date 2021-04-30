@@ -1,25 +1,28 @@
- # 
- # This file is part of the Discord Voicetools by pengi
- # Copyright (c) 2021 pengi
- #
- # Contact: max@pengi.se
- # 
- # This program is free software: you can redistribute it and/or modify  
- # it under the terms of the GNU General Public License as published by  
- # the Free Software Foundation, version 3.
- #
- # This program is distributed in the hope that it will be useful, but 
- # WITHOUT ANY WARRANTY; without even the implied warranty of 
- # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
- # General Public License for more details.
- #
- # You should have received a copy of the GNU General Public License 
- # along with this program. If not, see <http://www.gnu.org/licenses/>.
- #
+#
+# This file is part of the Discord Voicetools by pengi
+# Copyright (c) 2021 pengi
+#
+# Contact: max@pengi.se
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
 
 import discord
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+import pytz
+
+config_re = re.compile(r'([a-z-_]+):([^ ]*)')
 
 
 class BehaviorVoiceRole:
@@ -90,13 +93,33 @@ class BehaviorStatsChannel:
             re.sub(r'[ ]+', '-', filtered.strip().lower())
         return self._get_channel_by_name(stats_channel)
 
+    def _channel_config(self, channel):
+        config = {}
+        for k, v in config_re.findall(channel.topic):
+            config[k] = v
+        return config
+
+    def _format_now(self, config, include_timezone=False):
+        tz = timezone.utc
+        if 'tz' in config:
+            try:
+                conf_tz = pytz.timezone(config['tz'])
+                tz = conf_tz
+            except pytz.exceptions.UnknownTimeZoneError:
+                pass
+        now_fmt = datetime.now(tz).strftime("%H:%M:%S")
+        if include_timezone:
+            now_fmt += " " + str(tz)
+        return now_fmt
+
     async def voice_leave(self, member, channel):
         stchn = self._stats_channel(channel)
         if stchn is None:
             # If no stats channel is available, ignore
             return
 
-        now = datetime.now().strftime("%H:%M:%S")
+        config = self._channel_config(stchn)
+        now = self._format_now(config, False)
 
         async for msg in stchn.history(limit=self.HISTORY_LENGTH):
             if msg.content.startswith("join ") and member.mentioned_in(msg):
@@ -108,7 +131,8 @@ class BehaviorStatsChannel:
             # If no stats channel is available, ignore
             return
 
-        now = datetime.now().strftime("%H:%M:%S")
+        config = self._channel_config(stchn)
+        now = self._format_now(config, True)
 
         # Don't mention directly, but edit message to the mention. This ensures
         # the user won't get an annoying notificatoin, since only sending a
