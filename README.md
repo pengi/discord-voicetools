@@ -36,6 +36,22 @@ A channel with name "⏲ Waiting Room ⏲" will then have the stats channel name
 
 Timezone can be configured for the channel setting the topic in the stats channel to include "tz:timezone", for example "tz:CET". The timezone should be a name recognizable by pytz library, and defaults to UTC
 
+Static message
+--------------
+
+To add static messages to a channel, write a message as an administrator, prefixing the message with "-static"
+
+The bot will then create a message, copy the content and delete the original message
+
+To edit a static message, reply to the message to be updated, and type "-static" and the new message
+
+Tip: Use the -export command below to get the old content
+
+Export original message
+-----------------------
+
+To get the unformatted version of a message, reply to the message as an administrator an type "-export". The bot will reply with a file download of the content of the message
+
 Start the bot
 -------------
 
