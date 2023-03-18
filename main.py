@@ -298,7 +298,7 @@ class VoiceToolGuild:
 
 class VoiceTools(discord.Client):
     def __init__(self):
-        super(VoiceTools, self).__init__()
+        super(VoiceTools, self).__init__(intents=discord.Intents.all())
 
     def _wrap_guild(self, guild):
         # Small scale for now, so don't cache...
