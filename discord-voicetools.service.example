@@ -1,0 +1,16 @@
+[Unit]
+Description=Voice Tools Discord bot
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pengi
+Group=pengi
+WorkingDirectory=/PATH/TO/discord-voicetools/
+ExecStart=/PATH/TO/discord-voicetools/start.sh
+
+[Install]
+WantedBy=multi-user.target
