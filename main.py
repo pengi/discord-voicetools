@@ -22,6 +22,9 @@ import re
 import io
 from datetime import datetime, timezone
 import pytz
+import logging
+
+log = logging
 
 config_re = re.compile(r'([a-z-_]+):([^ ]*)')
 
@@ -173,7 +176,7 @@ class BehaviorStaticMessages:
 
         author = message.author
         channel = message.channel
-        perm = message.author.permissions_in(message.channel)
+        perm = channel.permissions_for(author)
 
         if not perm.administrator:
             # ignore messages from non-administrators
@@ -228,7 +231,9 @@ class BehaviorMessageExport:
 
         author = message.author
         channel = message.channel
-        perm = message.author.permissions_in(message.channel)
+        perm = channel.permissions_for(author)
+
+        print("Message", author, channel)
 
         if not perm.administrator:
             # ignore messages from non-administrators
@@ -278,22 +283,22 @@ class VoiceToolGuild:
         for behavior in self.behaviors:
             try:
                 await behavior.on_voice_leave(member, channel)
-            except AttributeError:
-                pass
+            except AttributeError as e:
+                log.exception("on_message")
 
     async def on_voice_join(self, member, channel):
         for behavior in self.behaviors:
             try:
                 await behavior.on_voice_join(member, channel)
             except AttributeError:
-                pass
+                log.exception("on_message")
 
     async def on_message(self, message):
         for behavior in self.behaviors:
             try:
                 await behavior.on_message(message)
             except AttributeError:
-                pass
+                log.exception("on_message")
 
 
 class VoiceTools(discord.Client):
